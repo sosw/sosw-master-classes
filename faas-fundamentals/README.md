@@ -24,6 +24,7 @@
 ## AWS Credentials
 
 *   Account: `123456789000`
+*   Region: `us-west-2`
 *   IAM User: `YOUR_NAME`
 
 
