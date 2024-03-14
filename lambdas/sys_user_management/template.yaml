@@ -19,11 +19,9 @@ Resources:
       Handler: app.lambda_handler
       MemorySize: 256
       PackageType: Zip
-      Runtime: python3.12
+      Runtime: python3.11
       Timeout: 10
       Tracing: Active
-      Layers:
-        - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:sosw:1"
 
   LambdaExecutionRole:
     Type: AWS::IAM::Role
