@@ -6,7 +6,7 @@ Parameters:
   LambdaUserManagerFunctionName:
     Description: "Name of Lambda Function."
     Type: String
-    Default: 'sosw_ms_user_management'
+    Default: 'sys-user-management'
 
 Resources:
   LambdaUserManager:
@@ -19,15 +19,11 @@ Resources:
       Handler: app.lambda_handler
       MemorySize: 256
       PackageType: Zip
-      Runtime: python3.11
+      Runtime: python3.12
       Timeout: 10
       Tracing: Active
-
-
-
       Layers:
         - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:sosw:1"
-
 
   LambdaExecutionRole:
     Type: AWS::IAM::Role
