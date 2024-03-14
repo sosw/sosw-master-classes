@@ -1,0 +1,10 @@
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "sosw-ms-user-management"
+resolve_s3 = true
+s3_prefix = "sosw-ms-user-management"
+region = "us-west-2"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+#profile = "ngr-926629045956"
