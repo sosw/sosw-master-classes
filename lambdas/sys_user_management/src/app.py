@@ -36,11 +36,11 @@ class Processor(SoswProcessor):
         trigger = event.get('action', '')
 
         match trigger:
-            case ['create']:
+            case 'create':
                 logger.info('Creating users')
                 self.sys_user_management_create_users(event)
 
-            case ['delete']:
+            case 'delete':
                 logger.info('Initializing deletion of users, roles, lambdas and policies.')
                 self.sys_user_management_cleanup()
 
@@ -130,8 +130,6 @@ class Processor(SoswProcessor):
             self.iam_client.delete_role(RoleName=role_name)
             logger.info('Role successfully deleted: %s', role_name)
             self.stats['roles_deleted'] += 1
-        else:
-            logger.info('No roles to delete or all roles are in exclude list')
 
 
     def generate_random_password(self, length: int = 8):
