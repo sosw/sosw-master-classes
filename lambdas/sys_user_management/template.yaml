@@ -20,7 +20,7 @@ Resources:
       MemorySize: 256
       PackageType: Zip
       Runtime: python3.11
-      Timeout: 10
+      Timeout: 300
       Tracing: Active
 
   LambdaExecutionRole:
