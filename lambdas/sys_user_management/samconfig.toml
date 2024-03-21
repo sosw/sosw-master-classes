@@ -5,5 +5,7 @@ stack_name = "sys-user-management"
 resolve_s3 = true
 s3_prefix = "sys-user-management"
 region = "us-west-2"
-confirm_changeset = true
-capabilities = "CAPABILITY_IAM"
+confirm_changeset = false
+capabilities = "CAPABILITY_NAMED_IAM"
+profile = "ngr-851725462680"
+

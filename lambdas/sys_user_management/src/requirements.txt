@@ -1,3 +1,4 @@
 aws-lambda-powertools
 aws-xray-sdk
 sosw
+pwgen

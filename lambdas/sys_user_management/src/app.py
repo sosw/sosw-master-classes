@@ -4,6 +4,7 @@ import string
 import random
 
 from aws_lambda_powertools import Logger
+from pwgen import pwgen
 from sosw.app import Processor as SoswProcessor, get_lambda_handler, LambdaGlobals
 
 logger = Logger()
@@ -19,6 +20,7 @@ class Processor(SoswProcessor):
                                         'AWSServiceRoleForSupport',
                                         'AWSServiceRoleForTrustedAdvisor',
                                         'OrganizationAccountAccessRole'],
+        'cleanup_exclude_users':       ['ngr'],
     }
 
     iam_client: boto3.client = None
@@ -38,7 +40,7 @@ class Processor(SoswProcessor):
         match trigger:
             case 'create':
                 logger.info('Creating users')
-                self.sys_user_management_create_users(event)
+                return self.sys_user_management_create_users(event)
 
             case 'delete':
                 logger.info('Initializing deletion of users, roles, lambdas and policies.')
@@ -68,14 +70,16 @@ class Processor(SoswProcessor):
 
     def sys_user_management_cleanup(self):
 
-        self.delete_users_and_groups()
+        for obj_name in ['user', 'group']:
+            self.delete_listed_objects(obj_name)
+
         self.delete_customer_managed_policies()
 
         regions = [region['RegionName'] for region in self.iam_client.describe_regions()['Regions']]
         for region in regions:
             self.delete_all_lambda_functions(region)
 
-        self.delete_iam_roles()
+        self.delete_listed_objects('role')
 
 
     def delete_all_lambda_functions(self, region: str = "us-west-2"):
@@ -90,30 +94,28 @@ class Processor(SoswProcessor):
                 self.stats['lambdas_deleted'] += 1
 
 
-    def delete_users_and_groups(self):
+    def delete_listed_objects(self, obj_type):
+        list_method = getattr(self.iam_client, f'list_{obj_type}s')
+        del_method = getattr(self.iam_client, f'delete_{obj_type}')
 
-        response = self.iam_client.list_users()
-        users = response['Users']
+        response = list_method()
 
-        for user in users:
-            username = user['UserName']
+        for obj in response.get(f"{obj_type.title()}s", []):
+            name = obj[f"{obj_type.title()}Name"]
 
-            self.iam_client.delete_user(UserName=username)
-            self.iam_client.delete_login_profile(UserName=username)
-            logger.info('Removed user: %s', username)
-            self.stats['users_deleted'] += 1
+            if name in self.config.get(f'cleanup_exclude_{obj_type}s', []):
+                logger.info("Skipping excluded %s: %s", obj_type, name)
+                continue
 
-        user_groups = self.iam_client.list_groups(UserName=users['UserName'])
-
-        for group in user_groups:
-            self.iam_client.delete_group(GroupName=group)
-            self.stats['groups_deleted'] += 1
+            logger.info("Deleting %s: %s", obj_type, name)
+            del_method(**{f"{obj_type.title()}Name": name})
+            self.stats[f'{obj_type}s_deleted'] += 1
 
 
     def delete_customer_managed_policies(self):
 
         response = self.iam_client.list_policies(Scope='Local')
-        policies_to_die = response['PolicyName']
+        policies_to_die = [x['PolicyName'] for x in response['Policies']]
 
         for policy in policies_to_die:
             self.iam_client.delete_policy(PolicyName=policy)
@@ -121,21 +123,8 @@ class Processor(SoswProcessor):
             self.stats['policies_deleted'] += 1
 
 
-    def delete_iam_roles(self):
-        response = self.iam_client.list_roles()
-        roles = [x for x in response['Roles'] if x not in self.config['cleanup_exclude_list_role']]
-
-        for role in roles:
-            role_name = role['RoleName']
-            self.iam_client.delete_role(RoleName=role_name)
-            logger.info('Role successfully deleted: %s', role_name)
-            self.stats['roles_deleted'] += 1
-
-
     def generate_random_password(self, length: int = 8):
-
-        characters = string.ascii_letters + string.digits + string.punctuation + string.ascii_uppercase
-        return ''.join(random.choice(characters) for _ in range(length))
+        return pwgen(length, symbols=True)
 
 
 global_vars = LambdaGlobals()
